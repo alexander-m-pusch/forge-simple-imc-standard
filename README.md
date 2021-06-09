@@ -13,3 +13,12 @@ At it's core, MinecraftForge provides InterModComms (IMC) by adding two Events: 
 ## The UIMCP pipeline
 The UIMC Protocol works by completing steps in a pre-defined order, which are the following:
 ### 1. Broadcasting
+In the InterModEnqueueEvent of the mod that provides the API, an IMC message is sent to every other loaded mod:
+The "method" argument must be "api" and the "thing" argument must be a supplier of a (callback) function that takes in a String "key" and returns a function "value" for that key. Three keys must always return a function in order for a mod to be UIMCP-compliant:
+  1.  The supplied function must return a function of type <String, Void> for the key "version". The function associated with the key "version" must return the API       version when invoked with no arguments.
+  2.  The supplied function must return a function of type <String, Void> for the key "apiName". The function associated with the key "apiName" must return the           API's name when invoked with no arguments.
+  3.  The supplied function must return a function of type <Function <<Function<Function<?,?>, String>, String> for the key "customAPIFunctions". The function           associated with the key "customAPIFunctions" must return a function which takes in the callee's modId as an argument and returns a function which returns           functions for a specific keyword. This is used for providing special functions only for a specific calling mod. An example can be seen below. If no special         functions are available for the calling mod, the function returned by "customAPIFunctions" should return null when called with the modId of the calling mod.
+  4.  The supplied function must return a function of type <Function<Function<?,?>, String>
+
+## Example usage
+An example implementation would look like the following:
