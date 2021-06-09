@@ -45,14 +45,14 @@ private static class API {
   }
   
   public static Function<?, ?> getAPIFunction(String functionName) {
-    if(functionName.equals("foo") return API::foo;
-    if(functionName.equals("bar") return API::bar;
+    if(functionName.equals("foo")) return API::foo;
+    if(functionName.equals("bar")) return API::bar;
     return null;
   }
   
   public static boolean hasAPIFunction(String name) {
-    if(name.equals("foo") return true;
-    if(name.equals("bar") return true;
+    if(name.equals("foo")) return true;
+    if(name.equals("bar")) return true;
     return false;
   }
   
@@ -79,16 +79,16 @@ private static class API {
 
 @SubscribeEvent
 public void enqueueIMC(InterModQueueEvent event) {
-  	for(ModInfo mod : FMLLoader.getLoadingModList().getMods()) {
-			String modid = mod.getModId();
-			if(modid.equals(MOD_ID)) continue;
-			InterModComms.sendTo(modid, "uimcp_api", new Supplier<String>() {
-				@Override
-				public String get() {
-					return API::theAPI;
-				}
-			});
-		}
+    for(ModInfo mod : FMLLoader.getLoadingModList().getMods()) {
+        String modid = mod.getModId();
+        if(modid.equals(MOD_ID)) continue;
+        InterModComms.sendTo(modid, "uimcp_api", new Supplier<String>() {
+            @Override
+            public String get() {
+                return API::theAPI;
+            }
+        });
+    }
 }
 ```
 
