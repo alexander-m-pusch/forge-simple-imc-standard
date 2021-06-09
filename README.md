@@ -8,14 +8,14 @@ MinecraftForge provides a way to send and receive messages from one mod to anoth
 This standard is only applicable to Minecraft Versions 1.16 and beyond as well as to Java 8 and onwards as it relies heavily on java.util.function.* .
 
 ## The baseline
-At it's core, MinecraftForge provides InterModComms (IMC) by adding two Events: the InterModEnqueueEvent as well as the InterModProcessEvent. First, the InterModEnqueueEvent is called on **all** mods, then the InterModProcessEvent is called on each mod which has a message sent to it. That mod can then process it's IMCs in whatever way it perceives as appropriate.
+At it's core, MinecraftForge provides InterModComms (IMC) by adding two Events: the InterModEnqueueEvent as well as the InterModProcessEvent. First, the InterModEnqueueEvent is called on **all** mods, then the InterModProcessEvent is called on each mod which has a message sent to it. That mod can then process it's IMCs in whatever way it perceives as appropriate. All of the actual API functions are defined by the mod that provides the API and should be documented publicly.
 
 ## The UIMCP pipeline
 The UIMC Protocol works by completing steps in a pre-defined order, which are the following:
 ### 1. Broadcasting
 In the InterModEnqueueEvent of the mod that provides the API, an IMC message is sent to every other loaded mod:
-The "method" argument must be "api" and the "thing" argument must be a supplier of a thread-safe, preferrably synchronized (callback) function that takes in a String "key" and returns a function "value" for that key. Six keys must always return a function in order for a mod to be UIMCP-compliant:
-  1.  The supplied function must return a function of type <String, Void> for the key "version". The function associated with the key "version" must return the API       version when invoked with no arguments.
+The "method" argument must be "uimcp_api" and the "thing" argument must be a supplier of a thread-safe, preferrably synchronized (callback) function that takes in a String "key" and returns a function "value" for that key. Five keys must always return a function in order for a mod to be UIMCP-compliant:
+  1.  The supplied function must return a function of type <String, Void> for the key "apiVersion". The function associated with the key "version" must return the API       version when invoked with no arguments.
   2.  The supplied function must return a function of type <String, Void> for the key "apiName". The function associated with the key "apiName" must return the           API's name when invoked with no arguments.
   3.  The supplied function must return a function of type <Function<Function<?,?>, String> for the key "apiFunctions". The function associated with the key             "apiFunctions" must return a function which returns API functions when provided with a valid API function name. This is the primary way API functions should       be accessed using the UIMC protocol. If no function exists for that API function name, the returned function shall return null.
   4.  The supplied function must return a function of type <Boolean, String> for the key "hasFunction". The function associated with the key                             "hasFunction" must return either true or false, depending on if an API function associated with the input string exists.
@@ -36,30 +36,59 @@ An example implementation would look like the following:
 API providing mod:
 ```java
 private static class API {
-  public static String getApiName() {
+  public static String getAPIName() {
     return "anExampleApi";
   }
   
-  public static String getApiVersion() {
+  public static String getAPIVersion() {
     return "1.2.3_04"; //let's see who get's that reference
   }
   
-  public static Function<?, ?> getApiFunction(String functionName) {
-  
+  public static Function<?, ?> getAPIFunction(String functionName) {
+    if(functionName.equals("foo") return API::foo;
+    if(functionName.equals("bar") return API::bar;
+    return null;
   }
   
+  public static boolean hasAPIFunction(String name) {
+    if(name.equals("foo") return true;
+    if(name.equals("bar") return true;
+    return false;
+  }
+  
+  public static boolean hasCapability(String name) {
+    return false; //most basic API implementation
+  }
+
   public static boolean foo(String input) {
     return input.equals("a string");
   }
   
   public static void bar() {
     System.out.println("bar"); 
-  ]
+  }
+  
+  public static Function<?, ?> theAPI(String mode) {
+    if(mode.equals("apiName")) return API::getAPIName;
+    if(mode.equals("apiVersion")) return API::getAPIVersion;
+    if(mode.equals("apiFunctions")) return API::getAPIFunction;
+    if(mode.equals("hasFunction")) return API::hasAPIFunction;
+    if(mode.equals("hasCapability")) return API::hasCapability;
+  }
 }
 
 @SubscribeEvent
 public void enqueueIMC(InterModQueueEvent event) {
-  
+  	for(ModInfo mod : FMLLoader.getLoadingModList().getMods()) {
+			String modid = mod.getModId();
+			if(modid.equals(MOD_ID)) continue;
+			InterModComms.sendTo(modid, "uimcp_api", new Supplier<String>() {
+				@Override
+				public String get() {
+					return API::theAPI;
+				}
+			});
+		}
 }
 ```
 
@@ -67,6 +96,31 @@ API using mod:
 ```java
 @SubscribeEvent 
 public void processIMC(InterModProcessEvent event) {
-
+  Iterator<IMCMessage> messages = InterModComms.getMessages(ReceiverModID).get;
+  while(messages.hasNext()) {
+    IMCMessage message = messages.next();
+    
+    if(message.getMethod().equals("api")) {
+      Function<Function<?,?>, String>> apiWrapper = (Function<Function<?,?>, String>>) message.getMessageSupplier();
+      
+      String apiName =  
+      String apiVersion
+      
+      if(!apiName.equals("anExampleApi") {
+        System.err.println("Could not load API " + apiName);
+        break;
+      }
+      
+      if(!apiVersion.equals("1.2.3_04") {
+        System.err.println("Could not load API " + apiName);
+        break;
+      }
+      
+      //omitting capability checking since we don't need it right now
+      
+      String hasFoo
+      String hasBar
+    }
+  }
 }
 ```
